@@ -132,6 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       scanning = false;
     });
+    scanner.cancel();
   }
 
   Future<void> announceNearbyDevices() async {
