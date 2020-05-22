@@ -16,8 +16,8 @@ export const fetchDevices = (deviceIds: string[]): Promise<Device[]> =>
   getConnection()
     .then(connection =>
       connection
-        .query(`SELECT * FROM devices WHERE mac IN ('${deviceIds.join(`','`)}');`) // I fucking hate myself but this library is so shit
-        .then(({ rows }: { rows: any[] }) =>
+      .query(`SELECT * FROM devices WHERE mac IN ('${deviceIds.join(`','`)}');`) // I fucking hate myself but this library is so shit
+      .then(({ rows }: { rows: any[] }) =>
           rows.map(([id, mac, meta]) => ({ id, mac, meta })))
         .finally(() => connection.end())
     )
@@ -30,7 +30,29 @@ export const postDevice = (body: DevicePostBody) =>
         .then(() => body)
         .finally(() => connection.end())
     )
-
+    
 export const getMetaFor = (deviceIds: string[]) =>
   fetchDevices(deviceIds)
     .then(devices => devices.map(({ meta }) => meta))
+
+
+export const sendPushMessages = async (deviceIds: String[]) => {
+  const wat = await fetch('https://onesignal.com/api/v1/notifications',{
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      include_external_user_ids: deviceIds,
+      app_id: Deno.env.get('ONESIGNAL_APP_ID'),
+      contents: {"en": "Beerist :D"},
+      channel_for_external_user_ids: 'push'
+
+    })
+  }).then(async (response) => {
+    console.log(await response.text())
+    return response.json();
+  })
+  return wat
+}

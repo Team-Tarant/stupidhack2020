@@ -2,11 +2,17 @@ import { Application } from 'https://deno.land/x/abc/mod.ts'
 import { logger } from 'https://deno.land/x/abc/middleware/logger.ts'
 import { cors } from 'https://deno.land/x/abc/middleware/cors.ts'
 import maybe from 'https://raw.githubusercontent.com/MergHQ/denofun/maybe-get-or-else/lib/maybe.ts'
+import "https://deno.land/x/denv/mod.ts";
 
-import { fetchDevices, postDevice, DevicePostBody, getMetaFor } from './api/devices.ts'
+import { fetchDevices, postDevice, DevicePostBody, getMetaFor, sendPushMessages } from './api/devices.ts'
 import { sendBeerQuestionTo } from './service/twilio.ts'
 const app = new Application()
-
+import {load} from "https://deno.land/x/denv/mod.ts";
+try {
+  await load(".env");
+} catch(e) {
+  console.log('brrrr')
+}
 
 app
   .use(logger())
@@ -44,6 +50,15 @@ app
       .catch(e => {
         console.error(e)
         ctx.json({ fuck: 'server is fucked' }, 500)
+      })
+  })
+  .get('/api/devices/sendPushMessages', async ctx => {
+    const body: { deviceIds: String[] } = await ctx.body()
+    return sendPushMessages(body.deviceIds)
+      .then(() => ctx.json({ bar: 'beeristä' }))
+      .catch(e => {
+        console.error(e)
+        ctx.json({ fuck: e }, 500)
       })
   })
   .start({
