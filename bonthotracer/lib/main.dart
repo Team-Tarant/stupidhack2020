@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,8 +14,8 @@ void main() {
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -29,7 +30,12 @@ class MyApp extends StatelessWidget {
 class Aloitus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+
     // TODO: implement build
+    OneSignal.shared.setLogLevel(OSLogLevel.error, OSLogLevel.none);
+
+    OneSignal.shared.init('a757a77e-72fd-4a39-95cc-51b762c73908',);
+    OneSignal.shared.setInFocusDisplayType(OSNotificationDisplayType.notification);
     return Scaffold(
         appBar: AppBar(title: Text('PoC')),
         body: Padding(
