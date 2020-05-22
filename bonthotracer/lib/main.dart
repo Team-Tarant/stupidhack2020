@@ -2,11 +2,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 // import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:international_phone_input/international_phone_input.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,7 +18,6 @@ void main() {
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   Widget build(BuildContext context) {
-
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -27,25 +29,130 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Aloitus extends StatelessWidget {
+class Aloitus extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => AloitusState();
+}
+
+class AloitusState extends State<Aloitus> {
+  String name;
+  String macAddress;
+  String phoneNumber;
+
+  initState() {
+    super.initState();
+    name = "";
+    macAddress = "";
+    phoneNumber = "";
+    OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+
+    OneSignal.shared.init(
+      'a757a77e-72fd-4a39-95cc-51b762c73908',
+    );
+    print("badam");
+    OneSignal.shared
+        .setInFocusDisplayType(OSNotificationDisplayType.notification);
+
+    check();
+  }
+
+  check() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var prefMac = prefs.containsKey("mac");
+    if (prefMac) {
+      print(prefs.getString("mac"));
+      OneSignal.shared.setExternalUserId(prefs.getString("mac").toLowerCase());
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => MyHomePage("asd")));
+    }
+  }
+
+  sendData() async {
+    print("halo");
+    OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
+    var data = {
+      "mac": macAddress,
+      "pushNotificationId": macAddress,
+      "meta": {"phone": phoneNumber, "name": name}
+    };
+    print(data);
+    var response = await http.post(
+        'https://stupidhack2020-service.herokuapp.com/api/devices',
+        body: convert.jsonEncode(data),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        });
+    if (response.statusCode == 200) {
+      print("je");
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString("mac", macAddress);
+      prefs.setString("phoneNumber", phoneNumber);
+      prefs.setString("name", name);
+      movetonext();
+    } else {
+      print("ärr");
+      print(response);
+    }
+  }
+
+  void movetonext() {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => MyHomePage("asd")));
+  }
+
   @override
   Widget build(BuildContext context) {
-
     // TODO: implement build
-    OneSignal.shared.setLogLevel(OSLogLevel.error, OSLogLevel.none);
-
-    OneSignal.shared.init('a757a77e-72fd-4a39-95cc-51b762c73908',);
-    OneSignal.shared.setInFocusDisplayType(OSNotificationDisplayType.notification);
     return Scaffold(
         appBar: AppBar(title: Text('PoC')),
-        body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(hintText: 'your bt address'),
-              onSubmitted: (text) {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => MyHomePage(text)));
-              },
-            )));
+        body: Column(children: <Widget>[
+          Padding(padding: const EdgeInsets.all(16.0), child: Text('hello')),
+          Form(
+              child: Column(
+            children: <Widget>[
+              Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    decoration: InputDecoration(hintText: 'your name'),
+                    onChanged: (text) => {
+                      setState(() {
+                        name = text;
+                      })
+                    },
+                  )),
+              Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                      onChanged: (text) => {
+                            setState(() {
+                              macAddress = text;
+                            })
+                          },
+                      decoration: InputDecoration(hintText: 'your bt address'),
+                      autocorrect: false)),
+              Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: InternationalPhoneInput(
+                    hintText: 'your phone number',
+                    initialSelection: '+358',
+                    onPhoneNumberChange: (String number,
+                        String internationalizedPhoneNumber, String isoCode) {
+                      setState(() {
+                        phoneNumber = internationalizedPhoneNumber;
+                      });
+                    },
+                  )),
+              Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: FlatButton(
+                      onPressed: () {
+                        sendData();
+                      },
+                      child: Text('yes'),
+                      color: Colors.redAccent))
+            ],
+          ))
+        ]));
   }
 }
 
@@ -74,6 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<BluetoothDiscoveryResult> devices;
   bool scanning;
   StreamSubscription<BluetoothDiscoveryResult> scanner;
+
   // BeaconBroadcast beaconBroadcast;
 
   @override
@@ -88,11 +196,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool exists(BluetoothDiscoveryResult result) {
-    return devices.any((BluetoothDiscoveryResult element) => element.device.address == result.device.address);
+    return devices.any((BluetoothDiscoveryResult element) =>
+        element.device.address == result.device.address);
   }
 
   StreamSubscription<BluetoothDiscoveryResult> startDiscovery() {
-    var listen = btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) {
+    var listen =
+        btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) {
       if (!exists(r)) {
         setState(() {
           devices.add(r);
@@ -100,6 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
     listen.onDone(() {
+      sendPush();
       if (scanning) {
         setState(() {
           scanner = startDiscovery();
@@ -116,7 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
       scanner = startDiscovery();
     });
 
-   /*  var transmissionSupportStatus = await beaconBroadcast.checkTransmissionSupported();
+    /*  var transmissionSupportStatus = await beaconBroadcast.checkTransmissionSupported();
     print("heh");
     print(transmissionSupportStatus);
     btInstance.startScan(timeout: Duration(seconds: 60));
@@ -142,18 +253,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> announceNearbyDevices() async {
-    final http.Response response = await http.post('/api',
-        body: convert.jsonEncode(this.devices),
+    var devicesList = devices.map((e) => e.device.address.toLowerCase()).toList().join(',');
+    final http.Response response =
+        await http.get('https://stupidhack2020-service.herokuapp.com/api/devices?devices=' + devicesList);
+  }
+
+  Future<void> sendPush() async {
+    var devicesList = {
+      "deviceIds": devices.map((e) => e.device.address.toLowerCase()).toList()
+    };
+    final http.Response response = await http.post(
+        'https://stupidhack2020-service.herokuapp.com/api/devices/sendPushMessages',
+        body: convert.jsonEncode(devicesList),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         });
-    if (response.statusCode == 200) {
-      var jsonDecode = convert.jsonDecode(response.body);
-    }
+    print("haloo");
+    print(devicesList);
+    print(response.statusCode);
   }
 
   Future<void> announceYourself() async {
-    final http.Response response = await http.post('/api',
+    final http.Response response = await http.post('https://stupidhack2020-service.herokuapp.com/api',
         body: convert.jsonEncode(this.devices),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
@@ -179,7 +300,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: new Icon(Icons.play_arrow),
                 onPressed: () {
                   this.startScanning();
-                }),            IconButton(
+                }),
+            IconButton(
                 icon: new Icon(Icons.stop),
                 onPressed: () {
                   this.stopScanning();
@@ -191,12 +313,11 @@ class _MyHomePageState extends State<MyHomePage> {
             itemBuilder: (context, index) {
               final item = this.devices[index];
 
-              var address = item.device.address == null ? "" : item.device.address;
+              var address =
+                  item.device.address == null ? "" : item.device.address;
               var name = item.device.name == null ? "" : item.device.name;
 
-              return ListTile(
-                  title: Text(address),
-                  subtitle: Text(name));
+              return ListTile(title: Text(address), subtitle: Text(name));
             }));
   }
 }
