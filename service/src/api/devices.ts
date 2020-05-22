@@ -36,25 +36,26 @@ export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
   const realDeviceIds = devices.map(({ id }) => id)
   console.log(realDeviceIds)
-  const wat = await fetch('https://onesignal.com/api/v1/notifications',{
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      include_external_user_ids: realDeviceIds, // ['foobar123']
-      app_id: Deno.env.get('ONESIGNAL_APP_ID'),
-      contents: {"en": "Beerist :D"},
-      channel_for_external_user_ids: 'push',
-      buttons: [{ id: "beer", text: "Lets beer", icon: "https://sinebrychoff.fi/media/22592/fi_karhu-5-3.png?height=1140&mode=max" }]
+  return await Promise.all(realDeviceIds.map(id =>
+    fetch('https://onesignal.com/api/v1/notifications',{
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        include_external_user_ids: id, // ['foobar123']
+        app_id: Deno.env.get('ONESIGNAL_APP_ID'),
+        contents: {"en": "Beerist :D"},
+        channel_for_external_user_ids: 'push',
+        buttons: [{ id: "beer", text: "Lets beer", icon: "https://sinebrychoff.fi/media/22592/fi_karhu-5-3.png?height=1140&mode=max" }]
 
+      })
+    }).then(async (response) => {
+      console.log(await response.text())
+      return response.json();
     })
-  }).then(async (response) => {
-    console.log(await response.text())
-    return response.json();
-  })
-  return wat
+  ))
 }
 
 export const getDataFor = (deviceIds: string[]) =>
