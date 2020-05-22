@@ -26,7 +26,7 @@ export const postDevice = (body: DevicePostBody) =>
   getConnection()
     .then(connection =>
       connection
-        .query('INSERT INTO devices (mac, meta, push_notification_id) VALUES ($1, $2)', body.mac,JSON.stringify(body.meta))
+        .query('INSERT INTO devices (mac, meta) VALUES ($1, $2)', body.mac, JSON.stringify(body.meta))
         .then(() => body)
         .finally(() => connection.end())
     )
