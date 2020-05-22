@@ -8,7 +8,7 @@ export interface DevicePostBody {
 export interface Device {
   id: number
   mac: string
-  meta: object
+  meta: any
 }
 
 export const fetchDevices = (deviceIds: string[]): Promise<Device[]> =>
@@ -16,7 +16,7 @@ export const fetchDevices = (deviceIds: string[]): Promise<Device[]> =>
   getConnection()
     .then(connection =>
       connection
-        .query('SELECT * FROM devices;')
+        .query(`SELECT * FROM devices WHERE mac IN ('${deviceIds.join(`','`)}');`) // I fucking hate myself but this library is so shit
         .then(({ rows }: { rows: any[] }) =>
           rows.map(([id, mac, meta]) => ({ id, mac, meta })))
         .finally(() => connection.end())
@@ -31,3 +31,6 @@ export const postDevice = (body: DevicePostBody) =>
         .finally(() => connection.end())
     )
 
+export const getMetaFor = (deviceIds: string[]) =>
+  fetchDevices(deviceIds)
+    .then(devices => devices.map(({ meta }) => meta))
