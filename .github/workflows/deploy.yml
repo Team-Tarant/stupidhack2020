@@ -15,11 +15,11 @@ jobs:
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       run: |
-      cd ./service
-      heroku container:push -a stupidhack2020-service web 
+        cd ./service
+        heroku container:push -a stupidhack2020-service web 
     - name: Release
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       run: |
-      cd ./service
-      heroku container:release -a stupidhack2020-service web 
+        cd ./service
+        heroku container:release -a stupidhack2020-service web 
