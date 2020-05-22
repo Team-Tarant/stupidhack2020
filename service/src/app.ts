@@ -58,7 +58,6 @@ app
   })
   .post('/api/devices/sendPushMessages', async ctx => {
     const body: { deviceIds: string[] } = await ctx.body()
-    await (body.deviceIds ? getDataFor(body.deviceIds).then(data => Promise.all(data.map(m => sendBeerQuestionTo(m.phone)))) : Promise.resolve([]))
     return sendPushMessages(body.deviceIds)
       .then()
       .then(() => ctx.json({ bar: 'beeristä' }))
