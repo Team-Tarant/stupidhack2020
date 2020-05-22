@@ -13,7 +13,7 @@ app
   .get('/', ctx => ctx.json({ hello: 'world' }))
   .get('/health', ctx => ctx.json({ ok: true }))
   .get('/api/devices', ctx =>
-    fetchDevices()
+    fetchDevices(ctx.queryParams.devices ? ctx.queryParams.devices.split(',') : [])
       .then(devices => ctx.json(devices))
       .catch(e => {
         console.error(e)

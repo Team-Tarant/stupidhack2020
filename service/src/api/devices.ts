@@ -11,7 +11,8 @@ export interface Device {
   meta: object
 }
 
-export const fetchDevices = (): Promise<Device[]> =>
+export const fetchDevices = (deviceIds: string[]): Promise<Device[]> =>
+  !deviceIds.length ? Promise.resolve([]) :
   getConnection()
     .then(connection =>
       connection
