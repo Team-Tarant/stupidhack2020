@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Aloitus(),
+      home: Scaffold(body: Aloitus()),
     );
   }
 }
@@ -38,6 +38,7 @@ class AloitusState extends State<Aloitus> {
   String name;
   String macAddress;
   String phoneNumber;
+  String oneSignalId = null;
 
   initState() {
     super.initState();
@@ -52,7 +53,13 @@ class AloitusState extends State<Aloitus> {
     print("badam");
     OneSignal.shared
         .setInFocusDisplayType(OSNotificationDisplayType.notification);
-
+    OneSignal.shared.setSubscriptionObserver((changes) {
+      if (changes.to.subscribed) {
+        setState(() {
+          oneSignalId = changes.to.userId;
+        });
+      }
+    });
     check();
   }
 
@@ -68,11 +75,17 @@ class AloitusState extends State<Aloitus> {
   }
 
   sendData() async {
+    if (oneSignalId == null) {
+      Scaffold.of(context).showSnackBar(SnackBar(
+          content: Text("Still initializing...please try again later")));
+      return;
+    }
+
     print("halo");
     OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
     var data = {
       "mac": macAddress,
-      "pushNotificationId": macAddress,
+      "pushNotificationId": oneSignalId,
       "meta": {"phone": phoneNumber, "name": name}
     };
     print(data);
