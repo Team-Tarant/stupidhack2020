@@ -1,11 +1,5 @@
-// import 'package:beacon_broadcast/beacon_broadcast.dart';
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-// import 'package:flutter_blue/flutter_blue.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert' as convert;
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,38 +9,46 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    //Remove this method to stop OneSignal Debugging
+    OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+    OneSignal.shared.setSubscriptionObserver((changes) {
+      if (changes.to.subscribed) {
+        print('----------------- SUBSCRIBED');
+        print(changes.to.userId);
+      }
+    });
+
+    OneSignal.shared.init(
+      "7b889594-6586-47d5-be46-d3cc10b24bae",
+    );
+    OneSignal.shared
+        .setInFocusDisplayType(OSNotificationDisplayType.notification);
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // Try running your application with "flutter run". You'll see the
+        // application has a blue toolbar. Then, without quitting the app, try
+        // changing the primarySwatch below to Colors.green and then invoke
+        // "hot reload" (press "r" in the console where you ran "flutter run",
+        // or simply save your changes to "hot reload" in a Flutter IDE).
+        // Notice that the counter didn't reset back to zero; the application
+        // is not restarted.
         primarySwatch: Colors.blue,
+        // This makes the visual density adapt to the platform that you run
+        // the app on. For desktop platforms, the controls will be smaller and
+        // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: Aloitus(),
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class Aloitus extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    return Scaffold(
-        appBar: AppBar(title: Text('PoC')),
-        body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(hintText: 'your bt address'),
-              onSubmitted: (text) {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => MyHomePage(text)));
-              },
-            )));
-  }
-}
-
 class MyHomePage extends StatefulWidget {
-  MyHomePage(String address) {
-    this.address = address;
-  }
+  MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -57,104 +59,24 @@ class MyHomePage extends StatefulWidget {
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
 
-  String address;
+  final String title;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  FlutterBluetoothSerial btInstance;
-  List<BluetoothDiscoveryResult> devices;
-  bool scanning;
-  StreamSubscription<BluetoothDiscoveryResult> scanner;
-  // BeaconBroadcast beaconBroadcast;
+  int _counter = 0;
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    this.btInstance = FlutterBluetoothSerial.instance;
-    this.devices = [];
-    this.scanning = false;
-    this.scanner = null;
-    // this.beaconBroadcast = BeaconBroadcast();
-  }
-
-  bool exists(BluetoothDiscoveryResult result) {
-    return devices.any((BluetoothDiscoveryResult element) => element.device.address == result.device.address);
-  }
-
-  StreamSubscription<BluetoothDiscoveryResult> startDiscovery() {
-    var listen = btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) {
-      if (!exists(r)) {
-        setState(() {
-          devices.add(r);
-        });
-      }
-    });
-    listen.onDone(() {
-      if (scanning) {
-        setState(() {
-          scanner = startDiscovery();
-        });
-      }
-    });
-    return listen;
-  }
-
-  Future<void> startScanning() async {
+  void _incrementCounter() {
     setState(() {
-      scanning = true;
-      devices.clear();
-      scanner = startDiscovery();
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
     });
-
-   /*  var transmissionSupportStatus = await beaconBroadcast.checkTransmissionSupported();
-    print("heh");
-    print(transmissionSupportStatus);
-    btInstance.startScan(timeout: Duration(seconds: 60));
-    beaconBroadcast
-        .setUUID('39ED98FF-2900-441A-802F-9C398FC199D2')
-        .setMajorId(1)
-        .setMinorId(100)
-        .start();
-    btInstance.scanResults.listen((results) {
-      print('lol');
-      print(results);
-      setState(() {
-        devices = results;
-      });
-    }); */
-  }
-
-  void stopScanning() {
-    setState(() {
-      scanning = false;
-    });
-    scanner.cancel();
-  }
-
-  Future<void> announceNearbyDevices() async {
-    final http.Response response = await http.post('/api',
-        body: convert.jsonEncode(this.devices),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        });
-    if (response.statusCode == 200) {
-      var jsonDecode = convert.jsonDecode(response.body);
-    }
-  }
-
-  Future<void> announceYourself() async {
-    final http.Response response = await http.post('/api',
-        body: convert.jsonEncode(this.devices),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        });
-    if (response.statusCode == 200) {
-      var jsonDecode = convert.jsonDecode(response.body);
-    }
   }
 
   @override
@@ -166,31 +88,106 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
-        appBar: AppBar(
-          title: Text('PoC'),
-          actions: <Widget>[
-            IconButton(
-                icon: new Icon(Icons.play_arrow),
-                onPressed: () {
-                  this.startScanning();
-                }),            IconButton(
-                icon: new Icon(Icons.stop),
-                onPressed: () {
-                  this.stopScanning();
-                }),
+      appBar: AppBar(
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Invoke "debug painting" (press "p" in the console, choose the
+          // "Toggle Debug Paint" action from the Flutter Inspector in Android
+          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
+          // to see the wireframe for each widget.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            MyCustomForm()
           ],
         ),
-        body: ListView.builder(
-            itemCount: this.devices.length,
-            itemBuilder: (context, index) {
-              final item = this.devices[index];
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
 
-              var address = item.device.address == null ? "" : item.device.address;
-              var name = item.device.name == null ? "" : item.device.name;
+class MyCustomForm extends StatefulWidget {
+  @override
+  MyCustomFormState createState() {
+    return MyCustomFormState();
+  }
+}
 
-              return ListTile(
-                  title: Text(address),
-                  subtitle: Text(name));
-            }));
+class MyCustomFormState extends State<MyCustomForm> {
+  // Create a global key that uniquely identifies the Form widget
+  // and allows validation of the form.
+  //
+  // Note: This is a `GlobalKey<FormState>`,
+  // not a GlobalKey<MyCustomFormState>.
+  final _formKey = GlobalKey<FormState>();
+  final _myController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    _myController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Build a Form widget using the _formKey created above.
+    return Form(
+        key: _formKey,
+        child: Column(children: <Widget>[
+          TextFormField(
+            // The validator receives the text that the user has entered.
+            validator: (value) {
+              if (value.isEmpty) {
+                return 'Please enter some text';
+              }
+              return null;
+            },
+            controller: _myController,
+          ),
+          RaisedButton(
+            onPressed: () {
+              // Validate returns true if the form is valid, otherwise false.
+              if (_formKey.currentState.validate()) {
+                // If the form is valid, display a snackbar. In the real world,
+                // you'd often call a server or save the information in a database.
+
+                print(_myController.text);
+                OneSignal.shared.setExternalUserId(_myController.text);
+
+                Scaffold.of(context)
+                    .showSnackBar(SnackBar(content: Text('Processing Data')));
+              }
+            },
+            child: Text('Submit'),
+          )
+        ]));
   }
 }
