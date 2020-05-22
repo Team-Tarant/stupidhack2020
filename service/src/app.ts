@@ -23,7 +23,7 @@ app
     )
   .post('/api/devices', async ctx => {
     const body: DevicePostBody = await ctx.body()
-    if (!body.mac || !body.meta || !body.pushNotificationId) {
+    if (!body.mac || !body.meta) {
       return ctx.json({ fuck: 'invalid post body' }, 400)
     }
     return postDevice(body)
@@ -41,7 +41,7 @@ app
     return getDataFor(body.macAddrs)
       .then(data =>
         data.length > 0 ?
-        Promise.all(data.map(({ meta }) => sendBeerQuestionTo(meta.phone))) :
+        Promise.all(data.map(meta => sendBeerQuestionTo(meta.phone))) :
         Promise.resolve([])
       )
       .then(() => ctx.json({ success: true }))
