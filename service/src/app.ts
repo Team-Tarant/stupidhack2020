@@ -3,7 +3,7 @@ import { logger } from 'https://deno.land/x/abc/middleware/logger.ts'
 import { cors } from 'https://deno.land/x/abc/middleware/cors.ts'
 import maybe from 'https://raw.githubusercontent.com/MergHQ/denofun/maybe-get-or-else/lib/maybe.ts'
 
-import { fetchDevices, postDevice } from './api/devices.ts'
+import { fetchDevices, postDevice, DevicePostBody } from './api/devices.ts'
 const app = new Application()
 
 
@@ -15,13 +15,23 @@ app
   .get('/api/devices', ctx =>
     fetchDevices()
       .then(devices => ctx.json(devices))
-      .catch(e => ctx.json({ fuck: e }, 500))
+      .catch(e => {
+        console.error(e)
+        ctx.json({ fuck: 'server is fucked' }, 500)
+      })
     )
-  .post('/api/devices', ctx =>
-    postDevice(ctx.body)
-      .then(() => ctx.json({ msg: 'beeristä' }))
-      .catch(e => ctx.json({fuck: e}, 500))
-  )
+  .post('/api/devices', async ctx => {
+    const body: DevicePostBody = await ctx.body()
+    if (!body.mac || !body.meta) {
+      return ctx.json({ fuck: 'invalid post body' }, 400)
+    }
+    return postDevice(body)
+      .then(device => ctx.json(device))
+      .catch(e => {
+        console.error(e)
+        ctx.json({ fuck: 'server is fucked' }, 500)
+      })
+  })
   .start({
     port: maybe(Deno.env.get('PORT'))
       .map(Number)
