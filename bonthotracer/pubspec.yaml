@@ -27,6 +27,8 @@ dependencies:
   flutter_bluetooth_serial: ^0.2.2
   firebase_messaging:
   onesignal_flutter: ^2.0.0
+  international_phone_input: ^1.0.4
+  shared_preferences: ^0.5.7+3
   flutter:
     sdk: flutter
 
