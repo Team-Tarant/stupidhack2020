@@ -47,7 +47,7 @@ app
     return getDataFor(body.macAddrs)
       .then(data =>
         data.length > 0 ?
-        Promise.all(data.map(({ meta }) => sendBeerQuestionTo(meta.phone))) :
+        Promise.all(data.map(meta => sendBeerQuestionTo(meta.phone))) :
         Promise.resolve([])
       )
       .then(() => ctx.json({ success: true }))
@@ -56,7 +56,7 @@ app
         ctx.json({ fuck: 'server is fucked' }, 500)
       })
   })
-  .get('/api/devices/sendPushMessages', async ctx => {
+  .post('/api/devices/sendPushMessages', async ctx => {
     const body: { deviceIds: String[] } = await ctx.body()
     return sendPushMessages(body.deviceIds)
       .then(() => ctx.json({ bar: 'beeristä' }))
