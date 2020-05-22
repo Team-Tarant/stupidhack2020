@@ -1,5 +1,6 @@
 // import 'package:beacon_broadcast/beacon_broadcast.dart';
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 
@@ -192,6 +193,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   FlutterBluetoothSerial btInstance;
   List<BluetoothDiscoveryResult> devices;
+  HashSet<BluetoothDiscoveryResult> oldDevices;
   bool scanning;
   StreamSubscription<BluetoothDiscoveryResult> scanner;
 
@@ -203,6 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     this.btInstance = FlutterBluetoothSerial.instance;
     this.devices = [];
+    this.oldDevices = new HashSet<BluetoothDiscoveryResult>();
     this.scanning = false;
     this.scanner = null;
     // this.beaconBroadcast = BeaconBroadcast();
@@ -266,15 +269,21 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> announceNearbyDevices() async {
-    var devicesList = devices.map((e) => e.device.address.toLowerCase()).toList().join(',');
-    final http.Response response =
-        await http.get('https://stupidhack2020-service.herokuapp.com/api/devices?devices=' + devicesList);
+    var devicesList =
+        devices.map((e) => e.device.address.toLowerCase()).toList().join(',');
+    final http.Response response = await http.get(
+        'https://stupidhack2020-service.herokuapp.com/api/devices?devices=' +
+            devicesList);
   }
 
   Future<void> sendPush() async {
     var devicesList = {
-      "deviceIds": devices.map((e) => e.device.address.toLowerCase()).toList()
+      "deviceIds": devices
+          .where((element) => !oldDevices.contains(element))
+          .map((e) => e.device.address.toLowerCase())
+          .toList()
     };
+    oldDevices.addAll(devices);
     final http.Response response = await http.post(
         'https://stupidhack2020-service.herokuapp.com/api/devices/sendPushMessages',
         body: convert.jsonEncode(devicesList),
@@ -287,7 +296,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> announceYourself() async {
-    final http.Response response = await http.post('https://stupidhack2020-service.herokuapp.com/api',
+    final http.Response response = await http.post(
+        'https://stupidhack2020-service.herokuapp.com/api',
         body: convert.jsonEncode(this.devices),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
