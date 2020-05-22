@@ -6,4 +6,4 @@ COPY . /app
 
 RUN ["deno" , "cache", "./src/app.ts"]
 
-CMD ["run", "--allow-net", "--allow-env", "./src/app.ts"]
+CMD ["run", "--allow-net", "--allow-env", "--allow-read", "./src/app.ts"]
