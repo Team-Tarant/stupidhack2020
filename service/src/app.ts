@@ -4,7 +4,7 @@ import { cors } from 'https://deno.land/x/abc/middleware/cors.ts'
 import maybe from 'https://raw.githubusercontent.com/MergHQ/denofun/maybe-get-or-else/lib/maybe.ts'
 import "https://deno.land/x/denv/mod.ts";
 
-import { fetchDevices, postDevice, DevicePostBody, getMetaFor, sendPushMessages } from './api/devices.ts'
+import { fetchDevices, postDevice, DevicePostBody, getDataFor, sendPushMessages } from './api/devices.ts'
 import { sendBeerQuestionTo } from './service/twilio.ts'
 const app = new Application()
 import {load} from "https://deno.land/x/denv/mod.ts";
@@ -44,8 +44,12 @@ app
     if (!body.macAddrs) {
       return ctx.json({ fuck: 'invalid post body' }, 400)
     }
-    return getMetaFor(body.macAddrs)
-      .then((meta: any[]) => meta.length > 0 ? Promise.all(meta.map(({ phone }) => sendBeerQuestionTo(phone))) : Promise.resolve([]))
+    return getDataFor(body.macAddrs)
+      .then(data =>
+        data.length > 0 ?
+        Promise.all(data.map(({ meta }) => sendBeerQuestionTo(meta.phone))) :
+        Promise.resolve([])
+      )
       .then(() => ctx.json({ success: true }))
       .catch(e => {
         console.error(e)

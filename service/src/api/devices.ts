@@ -26,15 +26,11 @@ export const postDevice = (body: DevicePostBody) =>
   getConnection()
     .then(connection =>
       connection
-        .query('INSERT INTO devices (mac, meta) VALUES ($1, $2)', body.mac, JSON.stringify(body.meta))
+        .query('INSERT INTO devices (mac, meta, push_notification_id) VALUES ($1, $2)', body.mac,JSON.stringify(body.meta))
         .then(() => body)
         .finally(() => connection.end())
     )
     
-export const getMetaFor = (deviceIds: string[]) =>
-  fetchDevices(deviceIds)
-    .then(devices => devices.map(({ meta }) => meta))
-
 
 export const sendPushMessages = async (deviceIds: String[]) => {
   const wat = await fetch('https://onesignal.com/api/v1/notifications',{
@@ -56,3 +52,7 @@ export const sendPushMessages = async (deviceIds: String[]) => {
   })
   return wat
 }
+
+export const getDataFor = (deviceIds: string[]) =>
+  fetchDevices(deviceIds)
+    .then(devices => devices.map(({ meta }) =>  meta ))

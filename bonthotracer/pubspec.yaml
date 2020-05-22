@@ -25,6 +25,8 @@ dependencies:
   http: ^0.12.1
   #beacon_broadcast: ^0.2.1
   flutter_bluetooth_serial: ^0.2.2
+  firebase_messaging:
+  onesignal_flutter: ^2.0.0
   flutter:
     sdk: flutter
 
