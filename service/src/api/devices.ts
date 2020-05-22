@@ -43,7 +43,8 @@ export const sendPushMessages = async (deviceIds: String[]) => {
       include_external_user_ids: deviceIds,
       app_id: Deno.env.get('ONESIGNAL_APP_ID'),
       contents: {"en": "Beerist :D"},
-      channel_for_external_user_ids: 'push'
+      channel_for_external_user_ids: 'push',
+      buttons: [{ id: "beer", text: "Lets beer", icon: "ic_menu_share" }]
 
     })
   }).then(async (response) => {
