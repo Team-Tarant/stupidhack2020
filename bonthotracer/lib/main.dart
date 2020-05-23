@@ -11,6 +11,7 @@ import 'dart:convert' as convert;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:international_phone_input/international_phone_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:assets_audio_player/assets_audio_player.dart';
 
 void main() {
   runApp(MyApp());
@@ -39,10 +40,11 @@ class AloitusState extends State<Aloitus> {
   String name;
   String macAddress;
   String phoneNumber;
-  String oneSignalId = null;
+  String oneSignalId;
 
   initState() {
     super.initState();
+    oneSignalId = null;
     name = "";
     macAddress = "";
     phoneNumber = "";
@@ -63,6 +65,13 @@ class AloitusState extends State<Aloitus> {
           oneSignalId = changes.to.userId;
         });
       }
+    });
+    OneSignal.shared.setNotificationOpenedHandler((result) {
+      if (result.action.actionId == "nobeer") {
+        AssetsAudioPlayer.newPlayer().open(Audio("assets/audio/toihin.mp3"),
+            showNotification: true, autoStart: true, respectSilentMode: false);
+      }
+      print('notification opened, ${result.action.toString()}');
     });
 
     check();
@@ -92,7 +101,10 @@ class AloitusState extends State<Aloitus> {
       return;
     }
 
-    print("halo");
+    print("Checking if user exists:");
+    if(await checkExistence(macAddress)) {
+      movetonext();
+    }
     OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
     var data = {
       "mac": macAddress,
@@ -116,6 +128,19 @@ class AloitusState extends State<Aloitus> {
     } else {
       print("ärr");
       print(response);
+    }
+  }
+  Future<bool> checkExistence(String macAddress) async {
+    final http.Response response = await http.get(
+        'https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
+    print(response.statusCode);
+    print('https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
+    if(response.statusCode == 404) {
+      print("device does not exists!");
+      return Future<bool>.value(false);
+    } else {
+      print("device exists!");
+      return Future<bool>.value(true);
     }
   }
 
@@ -219,6 +244,7 @@ class _MyHomePageState extends State<MyHomePage> {
     this.scanning = false;
     this.scanner = null;
     // this.beaconBroadcast = BeaconBroadcast();
+    startScanning();
   }
 
   bool exists(BluetoothDiscoveryResult result) {
@@ -228,15 +254,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   StreamSubscription<BluetoothDiscoveryResult> startDiscovery() {
     var listen =
-        btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) {
+        btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) async {
       if (!exists(r)) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        postDiscovery(prefs.getString("mac"), r.device.address.toLowerCase());
         setState(() {
           devices.add(r);
         });
       }
     });
     listen.onDone(() {
-      sendPush();
+      print("haloo");
+      // sendPush();
       if (scanning) {
         setState(() {
           scanner = startDiscovery();
@@ -287,31 +316,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> sendPush() async {
-    var devicesList = {
-      "deviceIds": devices
+    var devicesList = devices
           .where((element) => !oldDevices.contains(element))
-          .map((e) => e.device.address.toLowerCase())
-          .toList()
-    };
+          .map((e) => e.device.address.toLowerCase());
     oldDevices.addAll(devices);
-    final http.Response response = await http.post(
-        'https://stupidhack2020-service.herokuapp.com/api/devices/sendPushMessages',
-        body: convert.jsonEncode(devicesList),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        });
-    print("haloo");
-    print(devicesList);
-    print(response.statusCode);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String mac = prefs.getString("mac");
+    devicesList.map((e) => postDiscovery(mac, e));
   }
 
-  Future<void> announceYourself() async {
+  Future<void> postDiscovery(String columbus, String america) async {
+    print("sending");
+    var data = {
+      "columbus": columbus,
+      "america": america
+    };
     final http.Response response = await http.post(
-        'https://stupidhack2020-service.herokuapp.com/api',
-        body: convert.jsonEncode(this.devices),
+        'https://stupidhack2020-service.herokuapp.com/api/discoveries',
+        body: convert.jsonEncode(data),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         });
+    print(response.statusCode);
     if (response.statusCode == 200) {
       var jsonDecode = convert.jsonDecode(response.body);
     }
@@ -328,18 +354,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
         appBar: AppBar(
           title: Text('PoC'),
-          actions: <Widget>[
-            IconButton(
-                icon: new Icon(Icons.play_arrow),
-                onPressed: () {
-                  this.startScanning();
-                }),
-            IconButton(
-                icon: new Icon(Icons.stop),
-                onPressed: () {
-                  this.stopScanning();
-                }),
-          ],
         ),
         body: ListView.builder(
             itemCount: this.devices.length,

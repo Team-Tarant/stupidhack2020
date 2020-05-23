@@ -21,7 +21,7 @@ export const fetchDiscoveriesFor = (device: string): Promise<string[]> =>
     .then(connection =>
       connection
         .query('SELECT america FROM discoveries WHERE columbus = $1', device)
-        .then(({ rows }: { rows: string[][] }) => rows[0])
+        .then(({ rows }: { rows: string[][] }) => rows.flatMap(e => e))
         .finally(() => connection.end())
     )
 
