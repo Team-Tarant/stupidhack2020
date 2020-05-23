@@ -113,7 +113,7 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
           { id: 'nobeer', text: 'Lets not :(' }
 
       ],
-      data: {phone: dataForHost.meta.phone}
+      data: {phone: dataForHost.phone}
 
       })
     }).then(async (response) => {
