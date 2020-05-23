@@ -227,6 +227,7 @@ class _MyHomePageState extends State<MyHomePage> {
     this.scanning = false;
     this.scanner = null;
     // this.beaconBroadcast = BeaconBroadcast();
+    startScanning();
   }
 
   bool exists(BluetoothDiscoveryResult result) {
@@ -236,15 +237,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   StreamSubscription<BluetoothDiscoveryResult> startDiscovery() {
     var listen =
-        btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) {
+        btInstance.startDiscovery().listen((BluetoothDiscoveryResult r) async {
       if (!exists(r)) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        postDiscovery(prefs.getString("mac"), r.device.address.toLowerCase());
         setState(() {
           devices.add(r);
         });
       }
     });
     listen.onDone(() {
-      sendPush();
+      print("haloo");
+      // sendPush();
       if (scanning) {
         setState(() {
           scanner = startDiscovery();
@@ -295,31 +299,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> sendPush() async {
-    var devicesList = {
-      "deviceIds": devices
+    var devicesList = devices
           .where((element) => !oldDevices.contains(element))
-          .map((e) => e.device.address.toLowerCase())
-          .toList()
-    };
+          .map((e) => e.device.address.toLowerCase());
     oldDevices.addAll(devices);
-    final http.Response response = await http.post(
-        'https://stupidhack2020-service.herokuapp.com/api/devices/sendPushMessages',
-        body: convert.jsonEncode(devicesList),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        });
-    print("haloo");
-    print(devicesList);
-    print(response.statusCode);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String mac = prefs.getString("mac");
+    devicesList.map((e) => postDiscovery(mac, e));
   }
 
-  Future<void> announceYourself() async {
+  Future<void> postDiscovery(String columbus, String america) async {
+    print("sending");
+    var data = {
+      "columbus": columbus,
+      "america": america
+    };
     final http.Response response = await http.post(
-        'https://stupidhack2020-service.herokuapp.com/api',
-        body: convert.jsonEncode(this.devices),
+        'https://stupidhack2020-service.herokuapp.com/api/discoveries',
+        body: convert.jsonEncode(data),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         });
+    print(response.statusCode);
     if (response.statusCode == 200) {
       var jsonDecode = convert.jsonDecode(response.body);
     }
