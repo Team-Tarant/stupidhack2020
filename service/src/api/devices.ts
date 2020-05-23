@@ -69,7 +69,7 @@ export const sendPushMessages = async (deviceIds: string[]) => {
             url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)]
           }
         ],
-        data: {bar: 'beer'}
+        data: {phone: meta.phone}
     
       })
     }).then(async (response) => {
