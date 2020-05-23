@@ -100,7 +100,7 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
         contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
         channel_for_external_user_ids: 'push',
         buttons: [
-          { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] }
+          { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] },
           { id: 'nobeer', text: 'Lets not :(' }
 
       ]
