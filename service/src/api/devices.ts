@@ -81,6 +81,11 @@ export const sendPushMessages = async (deviceIds: string[]) => {
 export const sendTarantedNotification = async (deviceIds: string[], host: string) => {
   const devices = await fetchDevices(deviceIds);
   const dataForHost = await getDataFor(host)
+  const bonttosongs = [
+    'https://open.spotify.com/track/4Uw28Ky8prjtfg8e5xKbyQ?si=UAa9wescRHWa7Fepvf-gaQ',
+    'https://open.spotify.com/track/4sQ62KeHdGyW5Ir7o9BkKy?si=QsLtjRNPTymalFy2hksG8w',
+    'https://open.spotify.com/track/1bsAcer3SaVUOxtstOnlqO?si=qOUUgJ55TeSDnC4E588-Bw'
+  ]
   if (!dataForHost) return Promise.reject('No host found')
   return await Promise.all(devices.map(({ meta, mac }) =>
     fetch('https://onesignal.com/api/v1/notifications',{
@@ -94,6 +99,7 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
         app_id: Deno.env.get('ONESIGNAL_APP_ID'),
         contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
         channel_for_external_user_ids: 'push',
+        buttons: [{ id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] }]
       })
     }).then(async (response) => {
       console.log(await response.text())
