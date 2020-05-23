@@ -31,23 +31,45 @@ export const postDevice = (body: DevicePostBody) =>
         .query('INSERT INTO devices (mac, meta, push_notification_id) VALUES ($1, $2, $3)', body.mac, JSON.stringify(body.meta), body.pushNotificationId)
         .then(() => body)
         .finally(() => connection.end())
-    )
-    
+    )    
+
+export const getDevice = (mac: string): Promise<Device | null> =>
+  getConnection()
+  .then(connection =>
+    connection
+    .query(`SELECT * FROM devices WHERE mac = $1 LIMIT 1;`, mac)
+    .then(({ rows }: { rows: any[] }) =>
+        rows.map(([id, mac, meta, pushNotificationId]) => ({ id, mac, meta, pushNotificationId }))[0])
+      .finally(() => connection.end())
+  )
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
+  const bonttosongs = [
+    'https://open.spotify.com/track/4Uw28Ky8prjtfg8e5xKbyQ?si=UAa9wescRHWa7Fepvf-gaQ',
+    'https://open.spotify.com/track/4sQ62KeHdGyW5Ir7o9BkKy?si=QsLtjRNPTymalFy2hksG8w',
+    'https://open.spotify.com/track/1bsAcer3SaVUOxtstOnlqO?si=qOUUgJ55TeSDnC4E588-Bw'
+  ]
   return await Promise.all(devices.map(({ meta, mac }) =>
     fetch('https://onesignal.com/api/v1/notifications',{
       method: 'POST',
       headers: {
         Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
         'Content-Type': 'application/json'
-      },
+      },  
       body: JSON.stringify({
-        include_external_user_ids: [mac], // ['foobar123']
+        include_external_user_ids: [mac],
         app_id: Deno.env.get('ONESIGNAL_APP_ID'),
         contents: {'en': `Hello ${meta.name}, do u have beer`},
-        channel_for_external_user_ids: 'push'
+        channel_for_external_user_ids: 'push',
+        buttons: [
+          { 
+            id: "beer",
+            text: "Lets beer",
+            url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)]
+          }
+        ]
+    
       })
     }).then(async (response) => {
       console.log(await response.text())
@@ -56,6 +78,40 @@ export const sendPushMessages = async (deviceIds: string[]) => {
   ))
 }
 
-export const getDataFor = (deviceIds: string[]) =>
-  fetchDevices(deviceIds)
-    .then(devices => devices.map(({ meta }) =>  meta ))
+export const sendTarantedNotification = async (deviceIds: string[], host: string) => {
+  const devices = await fetchDevices(deviceIds);
+  const dataForHost = await getDataFor(host)
+  const bonttosongs = [
+    'https://open.spotify.com/track/4Uw28Ky8prjtfg8e5xKbyQ?si=UAa9wescRHWa7Fepvf-gaQ',
+    'https://open.spotify.com/track/4sQ62KeHdGyW5Ir7o9BkKy?si=QsLtjRNPTymalFy2hksG8w',
+    'https://open.spotify.com/track/1bsAcer3SaVUOxtstOnlqO?si=qOUUgJ55TeSDnC4E588-Bw'
+  ]
+  if (!dataForHost) return Promise.reject('No host found')
+  return await Promise.all(devices.map(({ meta, mac }) =>
+    fetch('https://onesignal.com/api/v1/notifications',{
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },  
+      body: JSON.stringify({
+        include_external_user_ids: [mac],
+        app_id: Deno.env.get('ONESIGNAL_APP_ID'),
+        contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
+        channel_for_external_user_ids: 'push',
+        buttons: [
+          { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] },
+          { id: 'nobeer', text: 'Lets not :(' }
+
+      ]
+      })
+    }).then(async (response) => {
+      console.log(await response.text())
+      return response.json()
+    })
+  ))
+}
+
+export const getDataFor = (deviceId: string) =>
+  fetchDevices([deviceId])
+    .then(devices => devices.length > 0 ? devices[0].meta : null)
