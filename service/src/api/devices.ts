@@ -112,7 +112,9 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
           { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] },
           { id: 'nobeer', text: 'Lets not :(' }
 
-      ]
+      ],
+      data: {phone: meta.phone}
+
       })
     }).then(async (response) => {
       console.log(await response.text())
