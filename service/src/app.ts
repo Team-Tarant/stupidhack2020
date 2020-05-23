@@ -2,7 +2,7 @@ import { Application } from 'https://deno.land/x/abc/mod.ts'
 import { logger } from 'https://deno.land/x/abc/middleware/logger.ts'
 import { cors } from 'https://deno.land/x/abc/middleware/cors.ts'
 import maybe from 'https://raw.githubusercontent.com/MergHQ/denofun/maybe-get-or-else/lib/maybe.ts'
-import { fetchDevices, postDevice, DevicePostBody, getDataFor, sendPushMessages, sendTarantedNotification } from './api/devices.ts'
+import { fetchDevices, postDevice, DevicePostBody, getDataFor, sendPushMessages, sendTarantedNotification, getDevice } from './api/devices.ts'
 import { DiscoveryPostBody, addDiscovery, fetchDiscoveriesFor } from './api/discoveries.ts'
 
 const app = new Application()
@@ -32,6 +32,8 @@ app
         ctx.json({ fuck: 'server is fucked' }, 500)
       })
     )
+  .get('/api/devices/:mac', ctx =>
+    getDevice(ctx.params.mac).then(d => !d ? ctx.json({ fuck: 'not found' }, 404) : ctx.json(d)))
   .post('/api/devices', async ctx => {
     const body: DevicePostBody = await ctx.body()
     if (!body.mac || !body.meta) {

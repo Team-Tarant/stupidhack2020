@@ -33,6 +33,16 @@ export const postDevice = (body: DevicePostBody) =>
         .finally(() => connection.end())
     )    
 
+export const getDevice = (mac: string): Promise<Device | null> =>
+  getConnection()
+  .then(connection =>
+    connection
+    .query(`SELECT * FROM devices WHERE mac = $1 LIMIT 1;`, mac)
+    .then(({ rows }: { rows: any[] }) =>
+        rows.map(([id, mac, meta, pushNotificationId]) => ({ id, mac, meta, pushNotificationId }))[0])
+      .finally(() => connection.end())
+  )
+
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
   return await Promise.all(devices.map(({ meta, mac }) =>
