@@ -42,9 +42,9 @@ export const sendPushMessages = async (deviceIds: string[]) => {
       headers: {
         Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
         'Content-Type': 'application/json'
-      },
+      },  
       body: JSON.stringify({
-        include_external_user_ids: [mac], // ['foobar123']
+        include_external_user_ids: [mac],
         app_id: Deno.env.get('ONESIGNAL_APP_ID'),
         contents: {'en': `Hello ${meta.name}, do u have beer`},
         channel_for_external_user_ids: 'push'
