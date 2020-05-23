@@ -56,16 +56,26 @@ class AloitusState extends State<Aloitus> {
         .setInFocusDisplayType(OSNotificationDisplayType.notification);
     OneSignal.shared.setSubscriptionObserver((changes) {
       if (changes.to.subscribed) {
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setString("one-signal-id", changes.to.userId);
+        });
         setState(() {
           oneSignalId = changes.to.userId;
         });
       }
     });
+
     check();
   }
 
   check() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.containsKey("one-signal-id")) {
+      setState(() {
+        oneSignalId = prefs.get("one-signal-key");
+      });
+    }
+
     var prefMac = prefs.containsKey("mac");
     if (prefMac) {
       print(prefs.getString("mac"));

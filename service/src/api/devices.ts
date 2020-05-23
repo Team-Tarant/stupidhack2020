@@ -36,12 +36,11 @@ export const postDevice = (body: DevicePostBody) =>
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
-  console.log(deviceIds)
-  console.log(devices)
-  const realDeviceIds = devices.map(({ mac }) => mac)
-  console.log(realDeviceIds)
-  return await Promise.all(realDeviceIds.map(id => {
-    console.log(id)
+  console.log('deviceIDs', deviceIds)
+  console.log('devices', devices)
+  const realDeviceIds = devices.map(({ pushNotificationId }) => pushNotificationId)
+  console.log('realDeviceIds', realDeviceIds)
+  return await Promise.all(realDeviceIds.map(id =>
     fetch('https://onesignal.com/api/v1/notifications',{
       method: 'POST',
       headers: {
@@ -58,7 +57,7 @@ export const sendPushMessages = async (deviceIds: string[]) => {
       console.log(await response.text())
       return response.json()
     })
-  }))
+  ))
 }
 
 export const getDataFor = (deviceIds: string[]) =>

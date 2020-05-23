@@ -4,15 +4,8 @@ import { cors } from 'https://deno.land/x/abc/middleware/cors.ts'
 import maybe from 'https://raw.githubusercontent.com/MergHQ/denofun/maybe-get-or-else/lib/maybe.ts'
 import { fetchDevices, postDevice, DevicePostBody, getDataFor, sendPushMessages } from './api/devices.ts'
 import { sendBeerQuestionTo } from './service/twilio.ts'
-import {load} from 'https://deno.land/x/denv/mod.ts'
 
 const app = new Application()
-try {
-  await load('.env');
-} catch(e) {
-  console.log('brrrr')
-}
-
 app
   .use(logger())
   .use(cors())
