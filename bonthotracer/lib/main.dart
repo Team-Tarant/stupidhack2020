@@ -72,7 +72,7 @@ class AloitusState extends State<Aloitus> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey("one-signal-id")) {
       setState(() {
-        oneSignalId = prefs.get("one-signal-key");
+        oneSignalId = prefs.get("one-signal-id");
       });
     }
 
