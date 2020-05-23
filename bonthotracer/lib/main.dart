@@ -1,6 +1,7 @@
 // import 'package:beacon_broadcast/beacon_broadcast.dart';
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:international_phone_input/international_phone_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(MyApp());
@@ -79,10 +81,23 @@ class AloitusState extends State<Aloitus> {
       if (result.action.actionId == "nobeer") {
         AssetsAudioPlayer.newPlayer().open(Audio("assets/audio/toihin.mp3"),
             showNotification: true, autoStart: true, respectSilentMode: false);
+      } else if (result.action.actionId == "beer") {
+        var number = result.notification.payload.additionalData['phone'];
+        print("calling $number");
+        callNumber(number);
       }
-      print('notification opened, ${result.action.toString()}');
     });
     print("haloo5");
+  }
+
+  callNumber(String number) async {
+    var url = 'tel:${number}';
+    if (await canLaunch(url)) {
+      print('launching ${url}');
+      await launch(url);
+    } else {
+      print('can\'t launch');
+    }
   }
 
   check() async {
@@ -360,8 +375,6 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         });
-    Scaffold.of(context).showSnackBar(SnackBar(
-        content: Text("you have announced your drunkness")));
     print("drunk");
     print(response);
     return response;
