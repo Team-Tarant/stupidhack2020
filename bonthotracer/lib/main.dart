@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 // import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'dart:convert' as convert;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:international_phone_input/international_phone_input.dart';
@@ -48,15 +49,22 @@ class AloitusState extends State<Aloitus> {
     name = "";
     macAddress = "";
     phoneNumber = "";
-    OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+    initOneSignal();
 
-    OneSignal.shared.init(
+    check();
+  }
+
+  Future<void> initOneSignal() async {
+    await OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+    print("haloo1");
+    await OneSignal.shared.init(
       'a757a77e-72fd-4a39-95cc-51b762c73908',
     );
-    print("badam");
-    OneSignal.shared
+    print("haloo2");
+    await OneSignal.shared
         .setInFocusDisplayType(OSNotificationDisplayType.notification);
-    OneSignal.shared.setSubscriptionObserver((changes) {
+    print("haloo3");
+    await OneSignal.shared.setSubscriptionObserver((changes) {
       if (changes.to.subscribed) {
         SharedPreferences.getInstance().then((prefs) {
           prefs.setString("one-signal-id", changes.to.userId);
@@ -66,15 +74,15 @@ class AloitusState extends State<Aloitus> {
         });
       }
     });
-    OneSignal.shared.setNotificationOpenedHandler((result) {
+    print("haloo4");
+    await OneSignal.shared.setNotificationOpenedHandler((result) {
       if (result.action.actionId == "nobeer") {
         AssetsAudioPlayer.newPlayer().open(Audio("assets/audio/toihin.mp3"),
             showNotification: true, autoStart: true, respectSilentMode: false);
       }
       print('notification opened, ${result.action.toString()}');
     });
-
-    check();
+    print("haloo5");
   }
 
   check() async {
@@ -88,7 +96,8 @@ class AloitusState extends State<Aloitus> {
     var prefMac = prefs.containsKey("mac");
     if (prefMac) {
       print(prefs.getString("mac"));
-      OneSignal.shared.setExternalUserId(prefs.getString("mac").toLowerCase());
+      await OneSignal.shared
+          .setExternalUserId(prefs.getString("mac").toLowerCase());
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => MyHomePage("asd")));
     }
@@ -102,10 +111,10 @@ class AloitusState extends State<Aloitus> {
     }
 
     print("Checking if user exists:");
-    if(await checkExistence(macAddress)) {
+    if (await checkExistence(macAddress)) {
       movetonext();
     }
-    OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
+    await OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
     var data = {
       "mac": macAddress,
       "pushNotificationId": oneSignalId,
@@ -130,12 +139,14 @@ class AloitusState extends State<Aloitus> {
       print(response);
     }
   }
+
   Future<bool> checkExistence(String macAddress) async {
     final http.Response response = await http.get(
         'https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
     print(response.statusCode);
-    print('https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
-    if(response.statusCode == 404) {
+    print(
+        'https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
+    if (response.statusCode == 404) {
       print("device does not exists!");
       return Future<bool>.value(false);
     } else {
@@ -317,8 +328,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> sendPush() async {
     var devicesList = devices
-          .where((element) => !oldDevices.contains(element))
-          .map((e) => e.device.address.toLowerCase());
+        .where((element) => !oldDevices.contains(element))
+        .map((e) => e.device.address.toLowerCase());
     oldDevices.addAll(devices);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String mac = prefs.getString("mac");
@@ -327,10 +338,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> postDiscovery(String columbus, String america) async {
     print("sending");
-    var data = {
-      "columbus": columbus,
-      "america": america
-    };
+    var data = {"columbus": columbus, "america": america};
     final http.Response response = await http.post(
         'https://stupidhack2020-service.herokuapp.com/api/discoveries',
         body: convert.jsonEncode(data),
@@ -341,6 +349,22 @@ class _MyHomePageState extends State<MyHomePage> {
     if (response.statusCode == 200) {
       var jsonDecode = convert.jsonDecode(response.body);
     }
+  }
+
+  Future<http.Response> postDrunkness() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String mac = prefs.getString("mac");
+    final http.Response response = await http.post(
+        'https://stupidhack2020-service.herokuapp.com/api/devices/iAmTaranted/' +
+            mac,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        });
+    Scaffold.of(context).showSnackBar(SnackBar(
+        content: Text("you have announced your drunkness")));
+    print("drunk");
+    print(response);
+    return response;
   }
 
   @override
@@ -355,16 +379,21 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: Text('PoC'),
         ),
-        body: ListView.builder(
-            itemCount: this.devices.length,
-            itemBuilder: (context, index) {
-              final item = this.devices[index];
-
-              var address =
-                  item.device.address == null ? "" : item.device.address;
-              var name = item.device.name == null ? "" : item.device.name;
-
-              return ListTile(title: Text(address), subtitle: Text(name));
-            }));
+        body: Center(
+            child: Column(
+          children: <Widget>[
+            Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: CircularProgressIndicator()),
+            Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FlatButton(
+                    onPressed: () {
+                      postDrunkness();
+                    },
+                    child: Text("i am drunk"),
+                    color: Colors.redAccent))
+          ],
+        )));
   }
 }
