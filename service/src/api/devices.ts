@@ -34,6 +34,8 @@ export const postDevice = (body: DevicePostBody) =>
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
+  console.log(deviceIds)
+  console.log(devices)
   const realDeviceIds = devices.map(({ mac }) => mac)
   console.log(realDeviceIds)
   return await Promise.all(realDeviceIds.map(id =>
