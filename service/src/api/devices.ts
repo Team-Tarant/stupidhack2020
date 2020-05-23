@@ -102,6 +102,7 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
         contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
         channel_for_external_user_ids: 'push',
         big_picture: 'https://nc.lavikjo.com/index.php/s/z2ro8RexRmeKamc',
+        android_accent_color: '#ff9ec2',
         buttons: [
           { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] },
           { id: 'nobeer', text: 'Lets not :(' }
