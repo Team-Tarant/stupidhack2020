@@ -31,8 +31,7 @@ export const postDevice = (body: DevicePostBody) =>
         .query('INSERT INTO devices (mac, meta, push_notification_id) VALUES ($1, $2, $3)', body.mac, JSON.stringify(body.meta), body.pushNotificationId)
         .then(() => body)
         .finally(() => connection.end())
-    )
-    
+    )    
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
@@ -67,6 +66,30 @@ export const sendPushMessages = async (deviceIds: string[]) => {
   ))
 }
 
-export const getDataFor = (deviceIds: string[]) =>
-  fetchDevices(deviceIds)
-    .then(devices => devices.map(({ meta }) =>  meta ))
+export const sendTarantedNotification = async (deviceIds: string[], host: string) => {
+  const devices = await fetchDevices(deviceIds);
+  const dataForHost = await getDataFor(host)
+  if (!dataForHost) return Promise.reject('No host found')
+  return await Promise.all(devices.map(({ meta, mac }) =>
+    fetch('https://onesignal.com/api/v1/notifications',{
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Deno.env.get('ONESIGNAL_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },  
+      body: JSON.stringify({
+        include_external_user_ids: [mac],
+        app_id: Deno.env.get('ONESIGNAL_APP_ID'),
+        contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
+        channel_for_external_user_ids: 'push',
+      })
+    }).then(async (response) => {
+      console.log(await response.text())
+      return response.json()
+    })
+  ))
+}
+
+export const getDataFor = (deviceId: string) =>
+  fetchDevices([deviceId])
+    .then(devices => devices.length > 0 ? devices[0].meta : null)
