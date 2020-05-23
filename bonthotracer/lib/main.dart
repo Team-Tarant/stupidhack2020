@@ -11,6 +11,7 @@ import 'dart:convert' as convert;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:international_phone_input/international_phone_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:assets_audio_player/assets_audio_player.dart';
 
 void main() {
   runApp(MyApp());
@@ -63,6 +64,13 @@ class AloitusState extends State<Aloitus> {
           oneSignalId = changes.to.userId;
         });
       }
+    });
+    OneSignal.shared.setNotificationOpenedHandler((result) {
+      if (result.action.actionId == "nobeer") {
+        AssetsAudioPlayer.newPlayer().open(Audio("assets/audio/toihin.mp3"),
+            showNotification: true, autoStart: true, respectSilentMode: false);
+      }
+      print('notification opened, ${result.action.toString()}');
     });
 
     check();
