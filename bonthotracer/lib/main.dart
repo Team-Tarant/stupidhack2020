@@ -354,18 +354,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
         appBar: AppBar(
           title: Text('PoC'),
-          actions: <Widget>[
-            IconButton(
-                icon: new Icon(Icons.play_arrow),
-                onPressed: () {
-                  this.startScanning();
-                }),
-            IconButton(
-                icon: new Icon(Icons.stop),
-                onPressed: () {
-                  this.stopScanning();
-                }),
-          ],
         ),
         body: ListView.builder(
             itemCount: this.devices.length,
