@@ -39,10 +39,11 @@ class AloitusState extends State<Aloitus> {
   String name;
   String macAddress;
   String phoneNumber;
-  String oneSignalId = null;
+  String oneSignalId;
 
   initState() {
     super.initState();
+    oneSignalId = null;
     name = "";
     macAddress = "";
     phoneNumber = "";
@@ -92,7 +93,10 @@ class AloitusState extends State<Aloitus> {
       return;
     }
 
-    print("halo");
+    print("Checking if user exists:");
+    if(await checkExistence(macAddress)) {
+      movetonext();
+    }
     OneSignal.shared.setExternalUserId(macAddress.toLowerCase());
     var data = {
       "mac": macAddress,
@@ -116,6 +120,19 @@ class AloitusState extends State<Aloitus> {
     } else {
       print("ärr");
       print(response);
+    }
+  }
+  Future<bool> checkExistence(String macAddress) async {
+    final http.Response response = await http.get(
+        'https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
+    print(response.statusCode);
+    print('https://stupidhack2020-service.herokuapp.com/api/devices/$macAddress');
+    if(response.statusCode == 404) {
+      print("device does not exists!");
+      return Future<bool>.value(false);
+    } else {
+      print("device exists!");
+      return Future<bool>.value(true);
     }
   }
 
