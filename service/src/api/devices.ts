@@ -36,6 +36,11 @@ export const postDevice = (body: DevicePostBody) =>
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
+  const bonttosongs = [
+    'https://open.spotify.com/track/4Uw28Ky8prjtfg8e5xKbyQ?si=UAa9wescRHWa7Fepvf-gaQ',
+    'https://open.spotify.com/track/4sQ62KeHdGyW5Ir7o9BkKy?si=QsLtjRNPTymalFy2hksG8w',
+    'https://open.spotify.com/track/1bsAcer3SaVUOxtstOnlqO?si=qOUUgJ55TeSDnC4E588-Bw'
+  ]
   return await Promise.all(devices.map(({ meta, mac }) =>
     fetch('https://onesignal.com/api/v1/notifications',{
       method: 'POST',
@@ -52,10 +57,7 @@ export const sendPushMessages = async (deviceIds: string[]) => {
           { 
             id: "beer",
             text: "Lets beer",
-          },
-          { 
-            id: "beer2",
-            text: "No beer",
+            url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)]
           }
         ]
     
