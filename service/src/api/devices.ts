@@ -36,9 +36,11 @@ export const postDevice = (body: DevicePostBody) =>
 
 export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
+  console.log('token', Deno.env.get('ONESIGNAL_API_KEY'))
+  console.log('app id', Deno.env.get('ONESIGNAL_APP_ID'))
   console.log('deviceIDs', deviceIds)
   console.log('devices', devices)
-  const realDeviceIds = devices.map(({ pushNotificationId }) => pushNotificationId)
+  const realDeviceIds = devices.map(({ mac }) => mac)
   console.log('realDeviceIds', realDeviceIds)
   return await Promise.all(realDeviceIds.map(id =>
     fetch('https://onesignal.com/api/v1/notifications',{
