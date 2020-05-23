@@ -79,7 +79,9 @@ export const sendPushMessages = async (deviceIds: string[]) => {
 }
 
 export const sendTarantedNotification = async (deviceIds: string[], host: string) => {
+  console.log('tarant notif deviceIds ', deviceIds)
   const devices = await fetchDevices(deviceIds);
+  console.log('tarant notif devices ', deviceIds)
   const dataForHost = await getDataFor(host)
   const bonttosongs = [
     'https://open.spotify.com/track/4Uw28Ky8prjtfg8e5xKbyQ?si=UAa9wescRHWa7Fepvf-gaQ',
