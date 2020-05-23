@@ -99,7 +99,11 @@ export const sendTarantedNotification = async (deviceIds: string[], host: string
         app_id: Deno.env.get('ONESIGNAL_APP_ID'),
         contents: {'en': `Hello ${meta.name}! ${dataForHost.name} is unfortunately drunk. Be careful :D`},
         channel_for_external_user_ids: 'push',
-        buttons: [{ id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] }]
+        buttons: [
+          { id: 'beer', text: 'Lets beer :D', url: bonttosongs[Math.floor(Math.random() * bonttosongs.length)] }
+          { id: 'nobeer', text: 'Lets not :(' }
+
+      ]
       })
     }).then(async (response) => {
       console.log(await response.text())
