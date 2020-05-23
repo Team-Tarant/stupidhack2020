@@ -2,12 +2,14 @@ import getConnection from '../database.ts'
 
 export interface DevicePostBody {
   mac: string
+  pushNotificationId: string
   meta: object
 }
 
 export interface Device {
   id: number
   mac: string
+  pushNotificationId: string
   meta: any
 }
 
@@ -18,7 +20,7 @@ export const fetchDevices = (deviceIds: string[]): Promise<Device[]> =>
       connection
       .query(`SELECT * FROM devices WHERE mac IN ('${deviceIds.join(`','`)}');`) // I fucking hate myself but this library is so shit
       .then(({ rows }: { rows: any[] }) =>
-          rows.map(([id, mac, meta]) => ({ id, mac, meta })))
+          rows.map(([id, mac, meta, pushNotificationId]) => ({ id, mac, meta, pushNotificationId })))
         .finally(() => connection.end())
     )
 
@@ -26,7 +28,7 @@ export const postDevice = (body: DevicePostBody) =>
   getConnection()
     .then(connection =>
       connection
-        .query('INSERT INTO devices (mac, meta) VALUES ($1, $2)', body.mac, JSON.stringify(body.meta))
+        .query('INSERT INTO devices (mac, meta, push_notification_id) VALUES ($1, $2, $3)', body.mac, JSON.stringify(body.meta), body.pushNotificationId)
         .then(() => body)
         .finally(() => connection.end())
     )
@@ -36,7 +38,7 @@ export const sendPushMessages = async (deviceIds: string[]) => {
   const devices = await fetchDevices(deviceIds);
   console.log(deviceIds)
   console.log(devices)
-  const realDeviceIds = devices.map(({ mac }) => mac)
+  const realDeviceIds = devices.map(({ pushNotificationId }) => pushNotificationId)
   console.log(realDeviceIds)
   return await Promise.all(realDeviceIds.map(id =>
     fetch('https://onesignal.com/api/v1/notifications',{
@@ -46,7 +48,7 @@ export const sendPushMessages = async (deviceIds: string[]) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        include_external_user_ids: [id], // ['foobar123']
+        include_player_ids: [id], // ['foobar123']
         app_id: Deno.env.get('ONESIGNAL_APP_ID'),
         contents: {'en': 'Beerist :D'},
         channel_for_external_user_ids: 'push'
