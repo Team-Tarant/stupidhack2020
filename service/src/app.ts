@@ -72,6 +72,16 @@ app
         ctx.json({ fuck: 'server is fucked' }, 500)
       })
   })
+  .post('/api/devices/iAmTaranted/:mac', async ctx => {
+    const discoveredForHost = await fetchDiscoveriesFor(ctx.params.mac)
+    return sendPushMessages(discoveredForHost)
+      .then()
+      .then(() => ctx.json({ bar: 'beeristä' }))
+      .catch(e => {
+        console.error(e)
+        ctx.json({ fuck: 'server is fucked' }, 500)
+      })
+  })
   .start({
     port: maybe(Deno.env.get('PORT'))
       .map(Number)
